@@ -78,6 +78,8 @@ async function initDB() {
         { name: 'Antônio Diniz', email: 'antonio.diniz@prodoeste.com.br', initials: 'AD', color: '#6366f1' },
         { name: 'André Resende', email: 'andre.resende@prodoeste.com.br', initials: 'AR', color: '#0891b2' },
         { name: 'Bianca Fuentes', email: 'bianca.fuentes@prodoeste.com.br', initials: 'BF', color: '#10b981' },
+        { name: 'Selma Ferreira', email: 'selma.ferreira@prodoeste.com.br', initials: 'SF', color: '#103327' },
+
       ];
       for (const u of users) {
         const hash = bcrypt.hashSync('senha123', 10);
