@@ -35,10 +35,14 @@ async function initDB() {
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         initials TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
         color TEXT NOT NULL DEFAULT '#6366f1',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Migração: adiciona coluna role se não existir
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'`);
 
     await query(`
       CREATE TABLE IF NOT EXISTS tasks (
@@ -71,21 +75,30 @@ async function initDB() {
       )
     `);
 
-    // Cria usuários iniciais se não existirem
-    const existing = await query('SELECT id FROM users');
+    // Cria admin se não existir
+    const adminExists = await queryOne("SELECT id FROM users WHERE email = $1", [process.env.ADMIN_EMAIL || 'admin@prodoeste.com.br']);
+    if (!adminExists) {
+      const hash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
+      await query(
+        'INSERT INTO users (name, email, password, initials, role, color) VALUES ($1,$2,$3,$4,$5,$6)',
+        ['Administrador', process.env.ADMIN_EMAIL || 'admin@prodoeste.com.br', hash, 'AD', 'admin', '#111827']
+      );
+      console.log(`✅ Admin criado: ${process.env.ADMIN_EMAIL || 'admin@prodoeste.com.br'}`);
+    }
+
+    // Cria usuários iniciais se não existirem (além do admin)
+    const existing = await query("SELECT id FROM users WHERE role = 'user'");
     if (existing.length === 0) {
       const users = [
-        { name: 'Antônio Diniz', email: 'antonio.diniz@prodoeste.com.br', initials: 'AD', color: '#6366f1' },
-        { name: 'André Resende', email: 'andre.resende@prodoeste.com.br', initials: 'AR', color: '#0891b2' },
+        { name: 'Antônio Diniz',  email: 'antonio.diniz@prodoeste.com.br',  initials: 'AD', color: '#6366f1' },
+        { name: 'André Resende',  email: 'andre.resende@prodoeste.com.br',  initials: 'AR', color: '#0891b2' },
         { name: 'Bianca Fuentes', email: 'bianca.fuentes@prodoeste.com.br', initials: 'BF', color: '#10b981' },
-        { name: 'Selma Ferreira', email: 'selma.ferreira@prodoeste.com.br', initials: 'SF', color: '#103327' },
-
       ];
       for (const u of users) {
         const hash = bcrypt.hashSync('senha123', 10);
         await query(
-          'INSERT INTO users (name, email, password, initials, color) VALUES ($1,$2,$3,$4,$5)',
-          [u.name, u.email, hash, u.initials, u.color]
+          'INSERT INTO users (name, email, password, initials, role, color) VALUES ($1,$2,$3,$4,$5,$6)',
+          [u.name, u.email, hash, u.initials, 'user', u.color]
         );
         console.log(`✅ Usuário criado: ${u.email} / senha123`);
       }

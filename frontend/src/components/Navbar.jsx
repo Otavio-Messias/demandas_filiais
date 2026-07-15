@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar({ tasks = [] }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const total = tasks.length;
@@ -11,6 +14,13 @@ export default function Navbar({ tasks = [] }) {
     return new Date(t.deadline) < new Date(new Date().toDateString());
   }).length;
   const urgent = tasks.filter(t => t.priority === 'Urgente' && t.status !== 'Concluída' && t.status !== 'Cancelada').length;
+
+  const navBtn = (path, label) => (
+    <button className="btn btn-ghost btn-sm" onClick={() => navigate(path)}
+      style={{ fontWeight: location.pathname === path ? 600 : 400, background: location.pathname === path ? 'var(--surface-2)' : 'transparent', borderBottom: location.pathname === path ? '2px solid var(--text)' : '2px solid transparent', borderRadius: 0, padding: '4px 10px' }}>
+      {label}
+    </button>
+  );
 
   return (
     <header style={{ background: 'white', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -26,11 +36,20 @@ export default function Navbar({ tasks = [] }) {
           <span style={{ fontSize: 13, color: urgent > 0 ? '#d97706' : 'var(--text-3)' }}>Urgentes <strong>{urgent}</strong></span>
         </div>
         <div style={{ flex: 1 }} />
+
+        {user?.role === 'admin' && (
+          <nav style={{ display: 'flex', gap: 2 }}>
+            {navBtn('/', 'Quadro')}
+            {navBtn('/usuarios', 'Usuários')}
+          </nav>
+        )}
+
         <div style={{ position: 'relative' }}>
           <button onClick={() => setMenuOpen(!menuOpen)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 8 }}>
             <div className="avatar" style={{ background: user?.color || '#6366f1', width: 30, height: 30, fontSize: 11 }}>{user?.initials}</div>
             <span style={{ fontSize: 13, fontWeight: 500, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</span>
+            {user?.role === 'admin' && <span style={{ fontSize: 10, background: '#111827', color: 'white', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>ADMIN</span>}
           </button>
           {menuOpen && (
             <>

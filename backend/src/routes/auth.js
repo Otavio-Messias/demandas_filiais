@@ -17,14 +17,14 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, initials: user.initials, color: user.color },
+      { id: user.id, email: user.email, name: user.name, initials: user.initials, color: user.color, role: user.role },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, initials: user.initials, color: user.color }
+      user: { id: user.id, name: user.name, email: user.email, initials: user.initials, color: user.color, role: user.role }
     });
   } catch (e) {
     res.status(500).json({ error: 'Erro interno' });
@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const user = await queryOne('SELECT id, name, email, initials, color FROM users WHERE id = $1', [req.user.id]);
+    const user = await queryOne('SELECT id, name, email, initials, color, role FROM users WHERE id = $1', [req.user.id]);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     res.json(user);
   } catch (e) {
