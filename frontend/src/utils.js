@@ -26,3 +26,23 @@ export function isOverdue(deadline, status) {
   if (!deadline || status === 'Concluída' || status === 'Cancelada') return false;
   return new Date(deadline) < new Date(new Date().toDateString());
 }
+
+export const FILIAIS = {
+  'Prodoeste': [
+    'Formiga',
+    'São Sebastião do Paraíso',
+    'Araxá',
+    'Uberaba',
+    'Pouso Alegre',
+    'Três Corações',
+    'Patos de Minas',
+  ],
+  'Uberdiesel': [
+    'Governador Valadares',
+    'Montes Claros',
+    'Sete Lagoas',
+    'Timóteo',
+  ],
+};
+
+export const ALL_FILIAIS = Object.values(FILIAIS).flat();

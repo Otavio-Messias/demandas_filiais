@@ -1,22 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { STATUSES, PRIORITIES } from '../utils';
+import { STATUSES, PRIORITIES, FILIAIS } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api';
 
 export default function TaskForm({ task, onClose, onSave }) {
   const { user } = useAuth();
   const isEdit = !!task;
-  const isOwner = !isEdit || task.assignee_id === user.id || task.created_by === user.id;
 
   const [form, setForm] = useState({
     title: task?.title || '',
     requester: task?.requester || '',
-    priority: task?.priority || 'Média',
+    priority: task?.priority || 'Media',
     deadline: task?.deadline || '',
     status: task?.status || 'Pendente',
     description: task?.description || '',
     what_to_do: task?.what_to_do || '',
     recurrence: task?.recurrence || '',
+    filial: task?.filial || '',
   });
   const [checklist, setChecklist] = useState(task?.checklist || []);
   const [newItem, setNewItem] = useState('');
@@ -28,7 +28,7 @@ export default function TaskForm({ task, onClose, onSave }) {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const addItem = () => { const t = newItem.trim(); if (!t) return; setChecklist(c => [...c, { id: `c${Date.now()}`, text: t, done: false }]); setNewItem(''); };
+  const addItem = () => { const t = newItem.trim(); if (!t) return; setChecklist(c => [...c, { id: 'c' + Date.now(), text: t, done: false }]); setNewItem(''); };
   const toggleItem = id => setChecklist(c => c.map(i => i.id === id ? { ...i, done: !i.done } : i));
   const removeItem = id => setChecklist(c => c.filter(i => i.id !== id));
 
@@ -45,11 +45,11 @@ export default function TaskForm({ task, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.requester) { setError('Preencha os campos obrigatórios.'); return; }
+    if (!form.title || !form.requester) { setError('Preencha os campos obrigatorios.'); return; }
     setSaving(true); setError('');
     try {
       const payload = { ...form, checklist };
-      if (isEdit) await api.put(`/tasks/${task.id}`, payload);
+      if (isEdit) await api.put('/tasks/' + task.id, payload);
       else await api.post('/tasks', payload);
       onSave();
     } catch (err) { setError(err.response?.data?.error || 'Erro ao salvar'); setSaving(false); }
@@ -69,8 +69,21 @@ export default function TaskForm({ task, onClose, onSave }) {
             {error && <div className="error-msg">{error}</div>}
 
             <div className="form-group">
-              <label className="form-label">Título *</label>
-              <input className="form-input" placeholder="Ex: Melhoria no atendimento da filial X" value={form.title} onChange={e => set('title', e.target.value)} required />
+              <label className="form-label">Titulo *</label>
+              <input className="form-input" placeholder="Ex: Melhoria no box dos mecanicos" value={form.title} onChange={e => set('title', e.target.value)} required />
+            </div>
+
+            {/* Filial */}
+            <div className="form-group">
+              <label className="form-label">Filial</label>
+              <select className="form-select" value={form.filial} onChange={e => set('filial', e.target.value)}>
+                <option value="">Selecione uma filial...</option>
+                {Object.entries(FILIAIS).map(([grupo, filiais]) => (
+                  <optgroup key={grupo} label={grupo}>
+                    {filiais.map(f => <option key={f} value={f}>{f}</option>)}
+                  </optgroup>
+                ))}
+              </select>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -87,7 +100,7 @@ export default function TaskForm({ task, onClose, onSave }) {
             <div className="form-group">
               <label className="form-label">Tarefa recorrente</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[{ value: '', label: 'Não repete' }, { value: 'diaria', label: 'Diária' }, { value: 'semanal', label: 'Semanal' }, { value: 'mensal', label: 'Mensal' }].map(opt => (
+                {[{ value: '', label: 'Nao repete' }, { value: 'diaria', label: 'Diaria' }, { value: 'semanal', label: 'Semanal' }, { value: 'mensal', label: 'Mensal' }].map(opt => (
                   <button key={opt.value} type="button" onClick={() => set('recurrence', opt.value)}
                     style={{ padding: '7px 14px', fontSize: 12.5, fontWeight: 500, borderRadius: 7, cursor: 'pointer', border: form.recurrence === opt.value ? '1.5px solid #7c3aed' : '1.5px solid var(--border)', background: form.recurrence === opt.value ? '#f5f3ff' : 'white', color: form.recurrence === opt.value ? '#7c3aed' : 'var(--text-2)' }}>
                     {opt.value && '🔁 '}{opt.label}
@@ -112,23 +125,23 @@ export default function TaskForm({ task, onClose, onSave }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Descrição</label>
+              <label className="form-label">Descricao</label>
               <textarea className="form-textarea" placeholder="Descreva a melhoria..." value={form.description} onChange={e => set('description', e.target.value)} style={{ minHeight: 90 }} />
             </div>
 
             <div className="form-group">
               <label className="form-label">O que precisa ser feito</label>
-              <textarea className="form-textarea" placeholder="Liste as ações necessárias..." value={form.what_to_do} onChange={e => set('what_to_do', e.target.value)} style={{ minHeight: 80 }} />
+              <textarea className="form-textarea" placeholder="Liste as acoes necessarias..." value={form.what_to_do} onChange={e => set('what_to_do', e.target.value)} style={{ minHeight: 80 }} />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Checklist {checklist.length > 0 && `(${doneCount}/${checklist.length})`}</label>
+              <label className="form-label">Checklist {checklist.length > 0 && ('(' + doneCount + '/' + checklist.length + ')')}</label>
               {checklist.length > 0 && (
                 <>
                   <div style={{ height: 5, background: '#f0f1f3', borderRadius: 10, overflow: 'hidden', marginBottom: 6 }}>
-                    <div style={{ height: '100%', width: `${(doneCount / checklist.length) * 100}%`, background: '#10b981', transition: 'width 0.2s' }} />
+                    <div style={{ height: '100%', width: ((doneCount / checklist.length) * 100) + '%', background: '#10b981', transition: 'width 0.2s' }} />
                   </div>
-                  <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 6 }}>↕ Arraste para reordenar</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 6 }}>Arraste para reordenar</p>
                 </>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
@@ -138,7 +151,7 @@ export default function TaskForm({ task, onClose, onSave }) {
                     <span style={{ color: 'var(--text-3)', fontSize: 14, userSelect: 'none' }}>⠿</span>
                     <input type="checkbox" checked={item.done} onChange={() => toggleItem(item.id)} style={{ width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }} />
                     <span style={{ flex: 1, fontSize: 13, textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--text-3)' : 'var(--text)' }}>{item.text}</span>
-                    <button type="button" onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 14, padding: 2, flexShrink: 0 }}>✕</button>
+                    <button type="button" onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 14, padding: 2, flexShrink: 0 }}>x</button>
                   </div>
                 ))}
               </div>
@@ -153,7 +166,7 @@ export default function TaskForm({ task, onClose, onSave }) {
           <div className="modal-body" style={{ paddingTop: 0 }}>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Salvando...' : '✓ Salvar'}</button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
         </form>

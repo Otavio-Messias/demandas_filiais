@@ -3,11 +3,11 @@ import Navbar from '../components/Navbar';
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import TaskDetail from '../components/TaskDetail';
-import { STATUSES } from '../utils';
+import { STATUSES, FILIAIS, ALL_FILIAIS } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api';
 
-const PRIORITY_ORDER = { 'Urgente': 0, 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+const PRIORITY_ORDER = { 'Urgente': 0, 'Alta': 1, 'Media': 2, 'Baixa': 3 };
 
 function sortTasks(tasks, sortBy) {
   const copy = [...tasks];
@@ -24,6 +24,7 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('Todas as prioridades');
+  const [filialFilter, setFilialFilter] = useState('Todas as filiais');
   const [userFilter, setUserFilter] = useState('todos');
   const [sortBy, setSortBy] = useState('prioridade');
   const [showForm, setShowForm] = useState(false);
@@ -43,8 +44,9 @@ export default function BoardPage() {
     const q = search.toLowerCase();
     const matchSearch = !q || t.title.toLowerCase().includes(q) || t.requester.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
     const matchPriority = priorityFilter === 'Todas as prioridades' || t.priority === priorityFilter;
+    const matchFilial = filialFilter === 'Todas as filiais' || t.filial === filialFilter;
     const matchUser = userFilter === 'todos' || t.assignee_id === parseInt(userFilter);
-    return matchSearch && matchPriority && matchUser;
+    return matchSearch && matchPriority && matchFilial && matchUser;
   });
 
   const columns = STATUSES.map(s => ({
@@ -58,57 +60,69 @@ export default function BoardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', maxWidth: '100vw' }}>
       <Navbar tasks={tasks} />
 
-      {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '12px 20px', background: 'white', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 160, maxWidth: 260 }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 160, maxWidth: 220 }}>
           <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', fontSize: 14 }}>🔍</span>
-          <input className="form-input" placeholder="Buscar tarefas..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 32 }} />
+          <input className="form-input" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 32 }} />
         </div>
 
-        <select className="form-select" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} style={{ maxWidth: 180 }}>
+        {/* Filtro por filial */}
+        <select className="form-select" value={filialFilter} onChange={e => setFilialFilter(e.target.value)} style={{ maxWidth: 200 }}>
+          <option value="Todas as filiais">Todas as filiais</option>
+          {Object.entries(FILIAIS).map(([grupo, filiais]) => (
+            <optgroup key={grupo} label={grupo}>
+              {filiais.map(f => <option key={f} value={f}>{f}</option>)}
+            </optgroup>
+          ))}
+        </select>
+
+        <select className="form-select" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} style={{ maxWidth: 170 }}>
           <option>Todas as prioridades</option>
-          <option>Alta</option><option>Média</option><option>Baixa</option><option>Urgente</option>
+          <option>Alta</option><option>Media</option><option>Baixa</option><option>Urgente</option>
         </select>
 
-        <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ maxWidth: 210 }}>
-          <option value="prioridade">⬆ Por prioridade</option>
-          <option value="prazo">⬆ Por prazo</option>
-          <option value="criacao_desc">⬆ Mais recentes</option>
-          <option value="criacao_asc">⬆ Mais antigas</option>
+        <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ maxWidth: 180 }}>
+          <option value="prioridade">Por prioridade</option>
+          <option value="prazo">Por prazo</option>
+          <option value="criacao_desc">Mais recentes</option>
+          <option value="criacao_asc">Mais antigas</option>
         </select>
 
-        {/* Filtro por usuário — todos podem ver */}
         {users.length > 0 && (
-          <select className="form-select" value={userFilter} onChange={e => setUserFilter(e.target.value)} style={{ maxWidth: 200 }}>
-            <option value="todos">Todos ({tasks.filter(t => t.status !== 'Concluída' && t.status !== 'Cancelada').length} ativas)</option>
-            {users.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.id === user.id ? `${u.name} (você)` : u.name}
-              </option>
+          <select className="form-select" value={userFilter} onChange={e => setUserFilter(e.target.value)} style={{ maxWidth: 180 }}>
+            <option value="todos">Todos os usuarios</option>
+            {users.filter(u => u.role !== 'admin').map(u => (
+              <option key={u.id} value={u.id}>{u.id === user.id ? u.name + ' (voce)' : u.name}</option>
             ))}
           </select>
         )}
 
         <div style={{ flex: 1 }} />
-
         <button className="btn btn-primary" onClick={() => setShowForm(true)} style={{ flexShrink: 0 }}>+ Nova tarefa</button>
       </div>
 
-      {/* Banner do usuário selecionado */}
-      {selectedUser && (
-        <div style={{ background: selectedUser.color + '18', borderBottom: `2px solid ${selectedUser.color}40`, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="avatar" style={{ background: selectedUser.color, width: 26, height: 26, fontSize: 10 }}>{selectedUser.initials}</div>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>
-            Tarefas de {selectedUser.id === user.id ? 'você' : selectedUser.name}
+      {/* Banners de filtro ativos */}
+      {(filialFilter !== 'Todas as filiais' || selectedUser) && (
+        <div style={{ display: 'flex', gap: 8, padding: '8px 20px', background: '#f8f9fb', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+          {filialFilter !== 'Todas as filiais' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 20, padding: '3px 10px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#0369a1' }}>📍 {filialFilter}</span>
+              <button onClick={() => setFilialFilter('Todas as filiais')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0369a1', fontSize: 12, padding: 0, lineHeight: 1 }}>x</button>
+            </div>
+          )}
+          {selectedUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: selectedUser.color + '18', border: '1px solid ' + selectedUser.color + '40', borderRadius: 20, padding: '3px 10px' }}>
+              <div className="avatar" style={{ background: selectedUser.color, width: 18, height: 18, fontSize: 8 }}>{selectedUser.initials}</div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: selectedUser.color }}>{selectedUser.id === user.id ? 'Suas tarefas' : selectedUser.name}</span>
+              <button onClick={() => setUserFilter('todos')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: selectedUser.color, fontSize: 12, padding: 0, lineHeight: 1 }}>x</button>
+            </div>
+          )}
+          <span style={{ fontSize: 12, color: 'var(--text-3)', alignSelf: 'center' }}>
+            {filtered.length} tarefa{filtered.length !== 1 ? 's' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
           </span>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-            — {filtered.filter(t => t.status !== 'Concluída' && t.status !== 'Cancelada').length} ativas
-          </span>
-          <button className="btn btn-ghost btn-sm" onClick={() => setUserFilter('todos')} style={{ marginLeft: 'auto', fontSize: 12 }}>✕ Ver todos</button>
         </div>
       )}
 
-      {/* Board */}
       {loading ? <div className="loading">Carregando tarefas...</div> : (
         <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', padding: '16px 20px', display: 'flex', gap: 12, minWidth: 0, width: '100%' }}>
           {columns.map(col => (
@@ -126,12 +140,7 @@ export default function BoardPage() {
                   <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-3)', fontSize: 12, border: '2px dashed var(--border)', borderRadius: 10 }}>Sem tarefas aqui</div>
                 ) : (
                   col.tasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      isOwner={task.assignee_id === user.id || task.created_by === user.id}
-                      onClick={t => setDetailId(t.id)}
-                    />
+                    <TaskCard key={task.id} task={task} isOwner={task.assignee_id === user.id || task.created_by === user.id} onClick={t => setDetailId(t.id)} />
                   ))
                 )}
               </div>

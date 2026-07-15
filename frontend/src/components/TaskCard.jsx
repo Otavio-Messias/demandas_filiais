@@ -10,7 +10,7 @@ export default function TaskCard({ task, onClick, isOwner }) {
       onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
     >
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: task.priority === 'Alta' || task.priority === 'Urgente' ? '#ef4444' : task.priority === 'Média' ? '#f59e0b' : '#10b981', borderRadius: '10px 10px 0 0', opacity: 0.7 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: task.priority === 'Alta' || task.priority === 'Urgente' ? '#ef4444' : task.priority === 'Media' ? '#f59e0b' : '#10b981', borderRadius: '10px 10px 0 0', opacity: 0.7 }} />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
         <h3 style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.4, flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -20,7 +20,15 @@ export default function TaskCard({ task, onClick, isOwner }) {
         <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 4, background: getStatus(task.status).color }} />
       </div>
 
-      {/* Responsável sempre visível */}
+      {/* Filial badge */}
+      {task.filial && (
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, background: '#f0f9ff', color: '#0369a1', padding: '2px 7px', borderRadius: 20, border: '1px solid #bae6fd' }}>
+            📍 {task.filial}
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
         <div className="avatar" style={{ background: task.assignee_color || '#6366f1', width: 18, height: 18, fontSize: 8 }}>{task.assignee_initials}</div>
         <span style={{ fontSize: 11, fontWeight: 600, color: task.assignee_color || 'var(--text-2)' }}>{task.assignee_name}</span>
