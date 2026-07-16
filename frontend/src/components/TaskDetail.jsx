@@ -47,7 +47,7 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   };
 
   if (loading) return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal"><div className="loading">Carregando...</div></div>
     </div>
   );
@@ -65,7 +65,7 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{ maxWidth: 680 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 0', gap: 12 }}>
           <div style={{ flex: 1 }}>
